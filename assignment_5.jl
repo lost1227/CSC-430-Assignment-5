@@ -93,7 +93,16 @@ Env("true", BoolV(true),
 Env("false", BoolV(false),
 nothing))))))))
 
-searlize(v :: Value) =
-if  isa(v, NumV)
-    "$(v.val)"
+function searlize(v :: Value)::String
+    if  isa(v, NumV)
+        "$(v.val)"
+    elseif isa(v, BoolV)
+        v.val ? "true" : "false"
+    elseif isa(v, StrV)
+        v.val
+    elseif isa(v, ClosV)
+        "#<procedure>"
+    elseif isa(v, PrimV)
+        "#<primop>"
+    end
 end
