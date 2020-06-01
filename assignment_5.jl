@@ -34,6 +34,7 @@ struct IdC
 end
 
 ExprC = Union{NumC, StrC, IfC, AppC, LamC, IdC}
+
 # Value Types
 struct NumV
     val :: Real
@@ -53,7 +54,7 @@ end
 struct ClosV
     args :: Array{String}
     body :: ExprC
-    env :: Enviroment
+    env
     ClosV(args, body, env) = new(args, body, env)
 end
 
@@ -63,3 +64,31 @@ struct PrimV
 end
 
 Value = Union{NumV, BoolV, StrV, ClosV, PrimV}
+
+struct Env
+    id::String
+    data::Value
+    next::Union{Env, Nothing}
+end
+Environment = Union{Env, Nothing}
+
+
+function find_in_environment(id::String, env::Environment)::Value
+    if env === nothing
+        return nothing
+    elseif env.id == id
+        return env.data
+    else
+        return find_in_environment(id, env.next)
+    end
+end
+
+topEnvironment = Env("+", PrimV("+"),
+Env("-", PrimV("-"),
+Env("*", PrimV("*"),
+Env("/", PrimV("/"),
+Env("<=", PrimV("<="),
+Env("equal?", PrimV("equal?"),
+Env("true", BoolV(true),
+Env("false", BoolV(false),
+nothing))))))))
