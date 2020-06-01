@@ -27,3 +27,8 @@ struct PrimV
 end
 
 Value = Union{NumV, BoolV, StrV, ClosV, PrimV}
+
+searlize(v :: Value) =
+if  isa(v, NumV)
+    "$(v.val)"
+end
