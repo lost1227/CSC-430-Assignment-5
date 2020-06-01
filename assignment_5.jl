@@ -17,14 +17,14 @@ struct IfC
 end
 
 struct AppC
-    body
+    funVal
     args::Array{Any}
     AppC(body, args) = new(body, args)
 end
 
 struct LamC
     body
-    args::Array{Any}
+    args::Array{String}
     LamC(body, args) = new(body, args)
 end
 
@@ -93,7 +93,27 @@ Env("true", BoolV(true),
 Env("false", BoolV(false),
 nothing))))))))
 
-searlize(v :: Value) =
+serialize(v :: Value) =
 if  isa(v, NumV)
     "$(v.val)"
 end
+
+function interp(exp::ExprC, env::Environment)::Value
+    if isa(exp, LamC)
+        return ClosV(exp.args, exp.body)
+    elseif isa(exp, IfC)
+        testVal = interp(exp.test, env)
+        if not isa(testVal, BoolV)
+            error("AQSE: test expression must evaluate to a boolean type")
+        elseif testVal.val
+            return interp(exp.then, env)
+        else
+            return interp(exp.els, env)
+        end
+    else
+        return BoolV(true)
+    end
+end
+
+interp(IfC(9, LamC(NumC(8), ["r"]), LamC(NumC(9), ["s"])), topEnvironment)
+
