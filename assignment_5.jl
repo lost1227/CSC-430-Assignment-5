@@ -99,7 +99,7 @@ function interp(expr :: ExprC, env :: Environment) :: Value
     elseif isa(expr, StrC)
         StrV(expr.str)
     elseif isa(expr, IdC)
-        find_in_environment(expt.id, env)
+        find_in_environment(expr.id, env)
     end
 end
 
