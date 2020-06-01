@@ -75,7 +75,7 @@ Environment = Union{Env, Nothing}
 
 function find_in_environment(id::String, env::Environment)::Value
     if env === nothing
-        return nothing
+        error("AQSE 404 : identifier not found")
     elseif env.id == id
         return env.data
     else
@@ -93,7 +93,17 @@ Env("true", BoolV(true),
 Env("false", BoolV(false),
 nothing))))))))
 
-function searlize(v :: Value)::String
+function interp(expr :: ExprC, env :: Environment) :: Value
+    if isa(expr, NumC)
+        NumV(expr.num)
+    elseif isa(expr, StrC)
+        StrV(expr.str)
+    elseif isa(expr, IdC)
+        find_in_environment(expr.id, env)
+    end
+end
+
+function searlize(v :: Value) :: String
     if  isa(v, NumV)
         "$(v.val)"
     elseif isa(v, BoolV)
