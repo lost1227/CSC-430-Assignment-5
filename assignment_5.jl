@@ -75,7 +75,7 @@ Environment = Union{Env, Nothing}
 
 function find_in_environment(id::String, env::Environment)::Value
     if env === nothing
-        return nothing
+        error("AQSE 404 : identifier not found")
     elseif env.id == id
         return env.data
     else
