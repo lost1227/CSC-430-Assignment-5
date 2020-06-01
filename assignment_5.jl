@@ -116,3 +116,7 @@ function searlize(v :: Value) :: String
         "#<primop>"
     end
 end
+
+function top_interp(expr :: ExprC) :: String
+    searlize(interp(expr, topEnvironment))
+end
