@@ -77,7 +77,7 @@ end
 Environment = Union{Env, Nothing}
 
 
-function find_in_environment(id::String, env::Environment)::Union{Value, Nothing}
+function find_in_environment(id::String, env::Environment)::Value
     if env === nothing
         error("AQSE 404 : identifier not found")
     elseif env.id == id
@@ -98,7 +98,7 @@ Env("false", BoolV(false),
 nothing))))))))
 
 @test find_in_environment("true", topEnvironment) == BoolV(true)
-@test find_in_environment("does not exist", topEnvironment) === nothing
+@test_throws ErrorException("AQSE 404 : identifier not found") find_in_environment("does not exist", topEnvironment) === nothing
 
 searlize(v :: Value) =
 if isa(v, NumV)
@@ -110,10 +110,12 @@ function extend_env(args :: Array{String}, vals :: Array{Value}, env :: Environm
         error("AQSE: Mismatched arity!")
     end
     for i = 1:length(args)
-        env = Environment(args[i], vals[i], env)
+        env = Env(args[i], vals[i], env)
     end
     return env
 end
+
+@test extend_env(["abc"], convert(Array{Value}, [StrV("abc")]), nothing) == Env("abc", StrV("abc"), nothing)
 
 function check_numeric_binop_valid_args(args :: Array{Value})
     if length(args) != 2
@@ -126,29 +128,34 @@ function check_numeric_binop_valid_args(args :: Array{Value})
     end
 end
 
+@test check_numeric_binop_valid_args(convert(Array{Value}, [NumV(10), NumV(20)])) === nothing
+@test_throws ErrorException("AQSE: bad syntax: primop invalid arguments") check_numeric_binop_valid_args(convert(Array{Value}, [NumV(10), NumV(20), NumV(30)]))
+@test_throws ErrorException("AQSE: bad syntax: primop invalid arguments") check_numeric_binop_valid_args(convert(Array{Value}, [NumV(10)]))
+@test_throws ErrorException("AQSE: bad syntax: primop invalid arguments") check_numeric_binop_valid_args(convert(Array{Value}, [NumV(10), StrV("20")]))
+
 function interp_primop(op :: String, args :: Array{Value})
     if op == "+"
         check_numeric_binop_valid_args(args)
-        return args[0].val + args[1].val
+        return NumV(args[1].val + args[2].val)
     elseif op == "-"
         check_numeric_binop_valid_args(args)
-        return args[0].val - args[1].val
+        return NumV(args[1].val - args[2].val)
     elseif op == "*"
         check_numeric_binop_valid_args(args)
-        return args[0].val * args[1].val
+        return NumV(args[1].val * args[2].val)
     elseif op == "/"
         check_numeric_binop_valid_args(args)
-        return args[0].val / args[1].val
+        return NumV(args[1].val / args[2].val)
     elseif op == "<="
         check_numeric_binop_valid_args(args)
-        return args[0].val <= args[1].val
+        return BoolV(args[1].val <= args[2].val)
     elseif op == "equal?"
         if length(args) != 2
             error("AQSE: bad syntax: equal? invalid arguments")
         end
-        return args[0] == args[1]
+        return BoolV(args[1] == args[2])
     elseif op == "error"
-        if length(args < 1) || !isa(args[1], String)
+        if length(args) != 1 || !isa(args[1], StrV)
             error("AQSE: bad syntax: error invalid arguments")
         end
         error("AQSE: error: $(args[1].val)")
@@ -156,6 +163,17 @@ function interp_primop(op :: String, args :: Array{Value})
         error("AQSE: invalid primop")
     end
 end
+
+@test interp_primop("+", convert(Array{Value}, [NumV(10), NumV(20)])) == NumV(30)
+@test interp_primop("-", convert(Array{Value}, [NumV(10), NumV(20)])) == NumV(-10)
+@test interp_primop("*", convert(Array{Value}, [NumV(10), NumV(20)])) == NumV(200)
+@test interp_primop("/", convert(Array{Value}, [NumV(10), NumV(20)])) == NumV(1/2)
+@test interp_primop("<=", convert(Array{Value}, [NumV(10), NumV(20)])) == BoolV(true)
+@test interp_primop("equal?", convert(Array{Value}, [NumV(10), NumV(20)])) == BoolV(false)
+@test_throws ErrorException("AQSE: bad syntax: equal? invalid arguments") interp_primop("equal?", convert(Array{Value}, [NumV(10), NumV(20), NumV(20)]))
+@test_throws ErrorException("AQSE: bad syntax: error invalid arguments") interp_primop("error", convert(Array{Value}, [NumV(10)]))
+@test_throws ErrorException("AQSE: bad syntax: error invalid arguments") interp_primop("error", convert(Array{Value}, [StrV("abc"), StrV("def")]))
+@test_throws ErrorException("AQSE: error: abc") interp_primop("error", convert(Array{Value}, [StrV("abc")]))
 
 function interp(expr :: ExprC, env :: Environment) :: Value
     if isa(expr, NumC)
