@@ -28,7 +28,7 @@ end
 
 struct LamC
     body
-    args::Array{Any}
+    args::Array{String}
     LamC(body, args) = new(body, args)
 end
 
@@ -182,6 +182,17 @@ function interp(expr :: ExprC, env :: Environment) :: Value
         StrV(expr.str)
     elseif isa(expr, IdC)
         find_in_environment(expr.id, env)
+    elseif isa(exp, LamC)
+        return ClosV(exp.args, exp.body, env)
+    elseif isa(exp, IfC)
+        testVal = interp(exp.test, env)
+        if !isa(testVal, BoolV)
+            error("AQSE: test expression must evaluate to a boolean type")
+        elseif testVal.val
+            return interp(exp.then, env)
+        else
+            return interp(exp.els, env)
+        end
     elseif isa(expr, AppC)
         clos :: Value = interp(expr.funexpr, env)
         argvals :: Array{Value} = map(arg -> interp(arg, env), expr.args)
@@ -195,6 +206,13 @@ function interp(expr :: ExprC, env :: Environment) :: Value
         end
     end
 end
+
+@test interp(NumC(7), topEnvironment) == NumV(7)
+@test interp(NumC(9), topEnvironment) == NumV(9)
+@test interp(StrC("Bad"), topEnvironment) == StrV("Bad")
+@test interp(StrC("End"), topEnvironment) == StrV("End")
+@test interp(IdC("+"), topEnvironment) == PrimV("+")
+@test interp(IdC("true"), topEnvironment) == BoolV(true)
 
 function searlize(v :: Value) :: String
     if isa(v, NumV)
@@ -210,6 +228,18 @@ function searlize(v :: Value) :: String
     end
 end
 
+@test searlize(NumV(6)) == "6"
+@test searlize(NumV(30)) == "30"
+@test searlize(BoolV(true)) == "true"
+@test searlize(BoolV(false)) == "false"
+@test searlize(StrV("Hello")) == "Hello"
+@test searlize(StrV("World")) == "World"
+@test searlize(ClosV(["a", "b", "c"], NumC(90), topEnvironment)) == "#<procedure>"
+@test searlize(ClosV(["z", "y", "x"], StrC("Nope"), topEnvironment)) == "#<procedure>"
+@test searlize(PrimV("*")) == "#<primop>"
+@test searlize(PrimV("+")) == "#<primop>"
+
+  
 function top_interp(expr :: ExprC) :: String
     searlize(interp(expr, topEnvironment))
 end
