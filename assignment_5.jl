@@ -194,7 +194,7 @@ end
 @test interp(StrC("Bad"), topEnvironment) == StrV("Bad")
 @test interp(StrC("End"), topEnvironment) == StrV("End")
 @test interp(IdC("+"), topEnvironment) == PrimV("+")
-@test interp(NumC("true"), topEnvironment) == BoolV(true)
+@test interp(IdC("true"), topEnvironment) == BoolV(true)
 
 function searlize(v :: Value) :: String
     if isa(v, NumV)
