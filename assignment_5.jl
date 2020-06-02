@@ -116,8 +116,6 @@ function interp(expr :: ExprC, env :: Environment) :: Value
     end
 end
 
-interp(IfC(9, LamC(NumC(8), ["r"]), LamC(NumC(9), ["s"])), topEnvironment)
-
 function searlize(v :: Value) :: String
     if  isa(v, NumV)
         "$(v.val)"
