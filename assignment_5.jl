@@ -101,7 +101,7 @@ function interp(expr :: ExprC, env :: Environment) :: Value
     elseif isa(expr, IdC)
         find_in_environment(expr.id, env)
     elseif isa(exp, LamC)
-        return ClosV(exp.args, exp.body)
+        return ClosV(exp.args, exp.body, env)
     elseif isa(exp, IfC)
         testVal = interp(exp.test, env)
         if not isa(testVal, BoolV)
