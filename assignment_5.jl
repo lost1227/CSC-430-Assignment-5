@@ -111,8 +111,6 @@ function interp(expr :: ExprC, env :: Environment) :: Value
         else
             return interp(exp.els, env)
         end
-    else
-        return BoolV(true)
     end
 end
 
