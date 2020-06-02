@@ -189,6 +189,13 @@ function interp(expr :: ExprC, env :: Environment) :: Value
     end
 end
 
+@test interp(NumC(7), topEnvironment) == NumV(7)
+@test interp(NumC(9), topEnvironment) == NumV(9)
+@test interp(StrC("Bad"), topEnvironment) == StrV("Bad")
+@test interp(StrC("End"), topEnvironment) == StrV("End")
+@test interp(IdC("+"), topEnvironment) == PrimV("+")
+@test interp(NumC("true"), topEnvironment) == BoolV(true)
+
 function searlize(v :: Value) :: String
     if isa(v, NumV)
         "$(v.val)"
