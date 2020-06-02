@@ -1,3 +1,5 @@
+using Test
+
 # ExprC types
 struct NumC
     num::Number
@@ -75,7 +77,7 @@ end
 Environment = Union{Env, Nothing}
 
 
-function find_in_environment(id::String, env::Environment)::Value
+function find_in_environment(id::String, env::Environment)::Union{Value, Nothing}
     if env === nothing
         return nothing
     elseif env.id == id
@@ -94,6 +96,9 @@ Env("equal?", PrimV("equal?"),
 Env("true", BoolV(true),
 Env("false", BoolV(false),
 nothing))))))))
+
+@test find_in_environment("true", topEnvironment) == BoolV(true)
+@test find_in_environment("does not exist", topEnvironment) === nothing
 
 searlize(v :: Value) =
 if isa(v, NumV)
