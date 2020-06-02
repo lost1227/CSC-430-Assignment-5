@@ -28,7 +28,7 @@ end
 
 struct LamC
     body
-    args::Array{Any}
+    args::Array{String}
     LamC(body, args) = new(body, args)
 end
 
@@ -164,6 +164,17 @@ function interp(expr :: ExprC, env :: Environment) :: Value
         StrV(expr.str)
     elseif isa(expr, IdC)
         find_in_environment(expr.id, env)
+    elseif isa(exp, LamC)
+        return ClosV(exp.args, exp.body, env)
+    elseif isa(exp, IfC)
+        testVal = interp(exp.test, env)
+        if !isa(testVal, BoolV)
+            error("AQSE: test expression must evaluate to a boolean type")
+        elseif testVal.val
+            return interp(exp.then, env)
+        else
+            return interp(exp.els, env)
+        end
     elseif isa(expr, AppC)
         clos :: Value = interp(expr.funexpr, env)
         argvals :: Array{Value} = map(arg -> interp(arg, env), expr.args)
@@ -203,6 +214,7 @@ end
 @test searlize(PrimV("*")) == "#<primop>"
 @test searlize(PrimV("+")) == "#<primop>"
 
+  
 function top_interp(expr :: ExprC) :: String
     searlize(interp(expr, topEnvironment))
 end
