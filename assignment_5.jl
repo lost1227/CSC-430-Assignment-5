@@ -192,6 +192,17 @@ function searlize(v :: Value) :: String
     end
 end
 
+@test searlize(NumV(6)) == "6"
+@test searlize(NumV(30)) == "30"
+@test searlize(BoolV(true)) == "true"
+@test searlize(BoolV(false)) == "false"
+@test searlize(StrV("Hello")) == "Hello"
+@test searlize(StrV("World")) == "World"
+@test searlize(ClosV(["a", "b", "c"], NumC(90), topEnvironment)) == "#<procedure>"
+@test searlize(ClosV(["z", "y", "x"], StrC("Nope"), topEnvironment)) == "#<procedure>"
+@test searlize(PrimV("*")) == "#<primop>"
+@test searlize(PrimV("+")) == "#<primop>"
+
 function top_interp(expr :: ExprC) :: String
     searlize(interp(expr, topEnvironment))
 end
