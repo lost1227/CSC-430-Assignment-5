@@ -225,3 +225,8 @@ end
 function top_interp(expr :: ExprC) :: String
     searlize(interp(expr, topEnvironment))
 end
+
+@test top_interp(NumC(7)) == "7"
+@test top_interp(NumC(16)) == "16"
+@test top_interp(StrC("It's")) == "It's"
+@test top_interp(StrC("Alive!")) == "Alive!"
