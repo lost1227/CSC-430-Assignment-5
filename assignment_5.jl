@@ -79,7 +79,7 @@ Environment = Union{Env, Nothing}
 
 function find_in_environment(id::String, env::Environment)::Union{Value, Nothing}
     if env === nothing
-        return nothing
+        error("AQSE 404 : identifier not found")
     elseif env.id == id
         return env.data
     else
@@ -158,7 +158,13 @@ function interp_primop(op :: String, args :: Array{Value})
 end
 
 function interp(expr :: ExprC, env :: Environment) :: Value
-    if isa(expr, AppC)
+    if isa(expr, NumC)
+        NumV(expr.num)
+    elseif isa(expr, StrC)
+        StrV(expr.str)
+    elseif isa(expr, IdC)
+        find_in_environment(expr.id, env)
+    elseif isa(expr, AppC)
         clos :: Value = interp(expr.funexpr, env)
         argvals :: Array{Value} = map(arg -> interp(arg, env), expr.args)
         if isa(clos, ClosV)
@@ -170,4 +176,22 @@ function interp(expr :: ExprC, env :: Environment) :: Value
             error("AQSE: Not a function or primop")
         end
     end
+end
+
+function searlize(v :: Value) :: String
+    if isa(v, NumV)
+        "$(v.val)"
+    elseif isa(v, BoolV)
+        v.val ? "true" : "false"
+    elseif isa(v, StrV)
+        v.val
+    elseif isa(v, ClosV)
+        "#<procedure>"
+    elseif isa(v, PrimV)
+        "#<primop>"
+    end
+end
+
+function top_interp(expr :: ExprC) :: String
+    searlize(interp(expr, topEnvironment))
 end
