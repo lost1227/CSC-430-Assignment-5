@@ -95,7 +95,8 @@ Env("<=", PrimV("<="),
 Env("equal?", PrimV("equal?"),
 Env("true", BoolV(true),
 Env("false", BoolV(false),
-nothing))))))))
+Env("error", PrimV("error"), 
+nothing)))))))))
 
 @test find_in_environment("true", topEnvironment) == BoolV(true)
 @test_throws ErrorException("AQSE 404 : identifier not found") find_in_environment("does not exist", topEnvironment) === nothing
@@ -159,7 +160,7 @@ function interp_primop(op :: String, args :: Array{Value})
         end
         return BoolV(args[1] == args[2])
     elseif op == "error"
-        if length(args) != 1 || !isa(args[1], StrV)
+        if length(args) != 1
             error("AQSE: bad syntax: error invalid arguments")
         end
         error("AQSE: error: $(args[1].val)")
@@ -180,7 +181,6 @@ end
 @test interp_primop("equal?", convert(Array{Value}, [StrV("abc"), StrV("def")])) == BoolV(false)
 @test interp_primop("equal?", convert(Array{Value}, [StrV("abc"), StrV("abc")])) == BoolV(true)
 @test_throws ErrorException("AQSE: bad syntax: equal? invalid arguments") interp_primop("equal?", convert(Array{Value}, [NumV(10), NumV(20), NumV(20)]))
-@test_throws ErrorException("AQSE: bad syntax: error invalid arguments") interp_primop("error", convert(Array{Value}, [NumV(10)]))
 @test_throws ErrorException("AQSE: bad syntax: error invalid arguments") interp_primop("error", convert(Array{Value}, [StrV("abc"), StrV("def")]))
 @test_throws ErrorException("AQSE: error: abc") interp_primop("error", convert(Array{Value}, [StrV("abc")]))
 @test_throws ErrorException("AQSE: arithmetic error: cannot divide by zero") interp_primop("/", convert(Array{Value}, [NumV(10), NumV(0)]))
@@ -210,7 +210,7 @@ function interp(expr :: ExprC, env :: Environment) :: Value
             new_env = extend_env(clos.args, argvals, env)
             return interp(clos.body, new_env)
         elseif isa(clos, PrimV)
-            interp_primop(clos.op, env)
+            interp_primop(clos.op, argvals)
         else
             error("AQSE: Not a function or primop")
         end
@@ -223,11 +223,13 @@ end
 @test interp(StrC("End"), topEnvironment) == StrV("End")
 @test interp(IdC("+"), topEnvironment) == PrimV("+")
 @test interp(IdC("true"), topEnvironment) == BoolV(true)
+@test_throws ErrorException("AQSE 404 : identifier not found") interp(IdC("DNE"), topEnvironment)
 
 # IfC tests
 @test interp(IfC(IdC("true"), NumC(9), NumC(3)), topEnvironment) == NumV(9)
 @test interp(IfC(IdC("false"), NumC(9), NumC(3)), topEnvironment) == NumV(3)
 @test_throws ErrorException("AQSE: test expression must evaluate to a boolean type") interp(IfC(NumC(10), NumC(9), NumC(3)), topEnvironment)
+
 # LamC tests
 test_expr = interp(LamC(NumC(9), ["x", "y"]), Env("x", NumV(9), nothing))
 @test typeof(test_expr) == ClosV
@@ -241,6 +243,11 @@ test_expr = interp(LamC(StrC("hello there"), ["o", "b"]), Env("z", StrV("hello")
 @test test_expr.body == StrC("hello there")
 @test test_expr.env == Env("z", StrV("hello"), nothing)
 
+# AppC tests
+@test interp(AppC(LamC(NumC(10), []), []), topEnvironment) == NumV(10)
+@test interp(AppC(LamC(AppC(IdC("*"), [IdC("+"), IdC("+")]), ["+"]), [NumC(3)]), topEnvironment) == NumV(9)
+@test_throws ErrorException("AQSE: error: 10") interp(AppC(IdC("error"), [NumC(10)]), topEnvironment)
+@test_throws ErrorException("AQSE: Not a function or primop") interp(AppC(NumC(10), []), topEnvironment)
 
 function searlize(v :: Value) :: String
     if isa(v, NumV)
