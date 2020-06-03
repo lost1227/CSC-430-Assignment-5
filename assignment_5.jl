@@ -288,3 +288,5 @@ test_expr = interp(LamC(StrC("hello there"), ["o", "b"]), Env("z", StrV("hello")
 @test top_interp(LamC(NumC(9), ["x", "y"])) == "#<procedure>"
 @test top_interp(AppC(LamC(NumC(10), []), [])) == "10"
 @test top_interp(AppC(LamC(AppC(IdC("*"), [IdC("+"), IdC("+")]), ["+"]), [NumC(3)])) == "9"
+@test top_interp(IdC("+")) == "#<primop>"
+@test top_interp(IdC("-")) == "#<primop>"
