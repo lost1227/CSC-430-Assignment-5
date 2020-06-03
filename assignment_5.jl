@@ -283,3 +283,16 @@ test_expr = interp(LamC(StrC("hello there"), ["o", "b"]), Env("z", StrV("hello")
 @test top_interp(StrC("It's")) == "It's"
 @test top_interp(StrC("Alive!")) == "Alive!"
 
+@test top_interp(
+    AppC(LamC(AppC(IdC("pow"), [IdC("pow"), NumC(2), NumC(10)]),
+            ["pow"]),
+        [LamC(IfC(AppC(IdC("equal?"), [IdC("power"), NumC(0)]),
+                NumC(1),
+                AppC(IdC("*"),
+                    [IdC("base"), 
+                    AppC(IdC("self"), 
+                        [IdC("self"),
+                        IdC("base"),
+                        AppC(IdC("-"), [IdC("power"), NumC(1)])])])),
+            ["self", "base", "power"])])) == "1024"
+
