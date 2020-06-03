@@ -87,17 +87,17 @@ function find_in_environment(id::String, env::Environment)::Value
     end
 end
 
-topEnvironment = Env("+", PrimV("+"),
-Env("-", PrimV("-"),
-Env("*", PrimV("*"),
-Env("/", PrimV("/"),
-Env("<=", PrimV("<="),
-Env("equal?", PrimV("equal?"),
-Env("true", BoolV(true),
-Env("false", BoolV(false),
+topEnvironment = Env("'+", PrimV("+"),
+Env("'-", PrimV("-"),
+Env("'*", PrimV("*"),
+Env("'/", PrimV("/"),
+Env("'<=", PrimV("<="),
+Env("'equal?", PrimV("equal?"),
+Env("'true", BoolV(true),
+Env("'false", BoolV(false),
 nothing))))))))
 
-@test find_in_environment("true", topEnvironment) == BoolV(true)
+@test find_in_environment("'true", topEnvironment) == BoolV(true)
 @test_throws ErrorException("AQSE 404 : identifier not found") find_in_environment("does not exist", topEnvironment) === nothing
 
 searlize(v :: Value) =
@@ -139,13 +139,13 @@ function parse_AQSE(expr :: Sexp) :: ExprC
     if isa(expr, Real)
         NumC(expr)
     elseif isa(expr, String)
-        if expr[1] == "'"
+        if expr[1] == '''
             IdC(expr)
         else
             StrC(expr)
         end
     elseif isa(expr, Array)
-        if expr[1] == "'if"
+        elseif expr[1] == "'if"
             if length(expr) == 4
                 IfC(parse_AQSE(expr[2]), parse_AQSE(expr[3]), parse_AQSE(expr[4]))
             else
@@ -157,11 +157,22 @@ function parse_AQSE(expr :: Sexp) :: ExprC
             else
                 error("AQSE wrong arity for lam")
             end
-        else
+        elseif length(expr) > 1
             AppC(parse_AQSE(expr[1]), getindex(expr, 2:length(expr)))
+        else
+            AppC(parse_AQSE(expr[1]), empty(Array))
         end
     end
 end
+
+@test parse_AQSE(10) == NumC(10)
+@test parse_AQSE(5.46) == NumC(5.46)
+@test parse_AQSE("hello") == StrC("hello")
+@test parse_AQSE("goodbye") == StrC("goodbye")
+@test parse_AQSE("'symbol") == IdC("'symbol")
+@test parse_AQSE("'a") == IdC("'a")
+@test parse_AQSE(["'if", ["'true"], 10, 15]) == IfC(AppC(IdC("'true"), empty(Array)), NumC(10), NumC(15))
+@test parse_AQSE(["'if", ["'false"], 46, 19]) == IfC(AppC(IdC("'false"), empty(Array)), NumC(46), NumC(19))
 
 function interp_primop(op :: String, args :: Array{Value})
     if op == "+"
