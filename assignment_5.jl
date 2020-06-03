@@ -13,7 +13,7 @@ end
 
 struct IfC
     test
-    tehn
+    then
     els
     IfC(test, then, els) = new(test, then, els)
 end
@@ -99,6 +99,7 @@ nothing))))))))
 
 @test find_in_environment("true", topEnvironment) == BoolV(true)
 @test_throws ErrorException("AQSE 404 : identifier not found") find_in_environment("does not exist", topEnvironment) === nothing
+
 
 searlize(v :: Value) =
 if isa(v, NumV)
@@ -186,21 +187,21 @@ end
 
 function interp(expr :: ExprC, env :: Environment) :: Value
     if isa(expr, NumC)
-        NumV(expr.num)
+        return NumV(expr.num)
     elseif isa(expr, StrC)
-        StrV(expr.str)
+        return StrV(expr.str)
     elseif isa(expr, IdC)
-        find_in_environment(expr.id, env)
-    elseif isa(exp, LamC)
-        return ClosV(exp.args, exp.body, env)
-    elseif isa(exp, IfC)
-        testVal = interp(exp.test, env)
+        return find_in_environment(expr.id, env)
+    elseif isa(expr, LamC)
+        return ClosV(expr.args, expr.body, env)
+    elseif isa(expr, IfC)
+        testVal = interp(expr.test, env)
         if !isa(testVal, BoolV)
             error("AQSE: test expression must evaluate to a boolean type")
         elseif testVal.val
-            return interp(exp.then, env)
+            return interp(expr.then, env)
         else
-            return interp(exp.els, env)
+            return interp(expr.els, env)
         end
     elseif isa(expr, AppC)
         clos :: Value = interp(expr.funexpr, env)
@@ -222,6 +223,24 @@ end
 @test interp(StrC("End"), topEnvironment) == StrV("End")
 @test interp(IdC("+"), topEnvironment) == PrimV("+")
 @test interp(IdC("true"), topEnvironment) == BoolV(true)
+
+# IfC tests
+@test interp(IfC(IdC("true"), NumC(9), NumC(3)), topEnvironment) == NumV(9)
+@test interp(IfC(IdC("false"), NumC(9), NumC(3)), topEnvironment) == NumV(3)
+@test_throws ErrorException("AQSE: test expression must evaluate to a boolean type") interp(IfC(NumC(10), NumC(9), NumC(3)), topEnvironment)
+# LamC tests
+test_expr = interp(LamC(NumC(9), ["x", "y"]), Env("x", NumV(9), nothing))
+@test typeof(test_expr) == ClosV
+@test test_expr.args == ["x", "y"]
+@test test_expr.body == NumC(9)
+@test test_expr.env == Env("x", NumV(9), nothing)
+
+test_expr = interp(LamC(StrC("hello there"), ["o", "b"]), Env("z", StrV("hello"), nothing))
+@test typeof(test_expr) == ClosV
+@test test_expr.args == ["o", "b"]
+@test test_expr.body == StrC("hello there")
+@test test_expr.env == Env("z", StrV("hello"), nothing)
+
 
 function searlize(v :: Value) :: String
     if isa(v, NumV)
