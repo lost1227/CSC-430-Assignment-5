@@ -282,4 +282,9 @@ test_expr = interp(LamC(StrC("hello there"), ["o", "b"]), Env("z", StrV("hello")
 @test top_interp(NumC(16)) == "16"
 @test top_interp(StrC("It's")) == "It's"
 @test top_interp(StrC("Alive!")) == "Alive!"
-
+@test top_interp(IfC(IdC("true"), NumC(19), NumC(17))) == "19"
+@test top_interp(IfC(IdC("false"), StrC("Goodbye"), StrC("Hello"))) == "Hello"
+@test top_interp(LamC(StrC("hello there"), ["o", "b"])) == "#<procedure>"
+@test top_interp(LamC(NumC(9), ["x", "y"])) == "#<procedure>"
+@test top_interp(AppC(LamC(NumC(10), []), [])) == "10"
+@test top_interp(AppC(LamC(AppC(IdC("*"), [IdC("+"), IdC("+")]), ["+"]), [NumC(3)])) == "9"
