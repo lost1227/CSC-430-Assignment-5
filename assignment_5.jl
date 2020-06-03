@@ -145,6 +145,9 @@ function interp_primop(op :: String, args :: Array{Value})
         return NumV(args[1].val * args[2].val)
     elseif op == "/"
         check_numeric_binop_valid_args(args)
+        if args[2].val == 0
+            error("AQSE: arithmetic error: cannot divide by zero")
+        end
         return NumV(args[1].val / args[2].val)
     elseif op == "<="
         check_numeric_binop_valid_args(args)
@@ -170,10 +173,16 @@ end
 @test interp_primop("/", convert(Array{Value}, [NumV(10), NumV(20)])) == NumV(1/2)
 @test interp_primop("<=", convert(Array{Value}, [NumV(10), NumV(20)])) == BoolV(true)
 @test interp_primop("equal?", convert(Array{Value}, [NumV(10), NumV(20)])) == BoolV(false)
+@test interp_primop("equal?", convert(Array{Value}, [NumV(10), NumV(10)])) == BoolV(true)
+@test interp_primop("equal?", convert(Array{Value}, [BoolV(true), BoolV(false)])) == BoolV(false)
+@test interp_primop("equal?", convert(Array{Value}, [BoolV(false), BoolV(false)])) == BoolV(true)
+@test interp_primop("equal?", convert(Array{Value}, [StrV("abc"), StrV("def")])) == BoolV(false)
+@test interp_primop("equal?", convert(Array{Value}, [StrV("abc"), StrV("abc")])) == BoolV(true)
 @test_throws ErrorException("AQSE: bad syntax: equal? invalid arguments") interp_primop("equal?", convert(Array{Value}, [NumV(10), NumV(20), NumV(20)]))
 @test_throws ErrorException("AQSE: bad syntax: error invalid arguments") interp_primop("error", convert(Array{Value}, [NumV(10)]))
 @test_throws ErrorException("AQSE: bad syntax: error invalid arguments") interp_primop("error", convert(Array{Value}, [StrV("abc"), StrV("def")]))
 @test_throws ErrorException("AQSE: error: abc") interp_primop("error", convert(Array{Value}, [StrV("abc")]))
+@test_throws ErrorException("AQSE: arithmetic error: cannot divide by zero") interp_primop("/", convert(Array{Value}, [NumV(10), NumV(0)]))
 
 function interp(expr :: ExprC, env :: Environment) :: Value
     if isa(expr, NumC)
