@@ -133,6 +133,36 @@ end
 @test_throws ErrorException("AQSE: bad syntax: primop invalid arguments") check_numeric_binop_valid_args(convert(Array{Value}, [NumV(10)]))
 @test_throws ErrorException("AQSE: bad syntax: primop invalid arguments") check_numeric_binop_valid_args(convert(Array{Value}, [NumV(10), StrV("20")]))
 
+Sexp = Union{Array, Real, String}
+
+function parse_AQSE(expr :: Sexp) :: ExprC
+    if isa(expr, Real)
+        NumC(expr)
+    elseif isa(expr, String)
+        if expr[1] == "'"
+            IdC(expr)
+        else
+            StrC(expr)
+        end
+    elseif isa(expr, Array)
+        if expr[1] == "'if"
+            if length(expr) == 4
+                IfC(parse_AQSE(expr[2]), parse_AQSE(expr[3]), parse_AQSE(expr[4]))
+            else
+                error("AQSE wrong arity for if")
+            end
+        elseif expr[1] == "'lam"
+            if length(expr) == 3
+                LamC(parse_AQSE(expr[3]), expr[2])
+            else
+                error("AQSE wrong arity for lam")
+            end
+        else
+            AppC(parse_AQSE(expr[1]), getindex(expr, 2:length(expr)))
+        end
+    end
+end
+
 function interp_primop(op :: String, args :: Array{Value})
     if op == "+"
         check_numeric_binop_valid_args(args)
