@@ -102,11 +102,6 @@ nothing)))))))))
 @test_throws ErrorException("AQSE 404 : identifier not found") find_in_environment("does not exist", topEnvironment) === nothing
 
 
-searlize(v :: Value) =
-if isa(v, NumV)
-    "$(v.val)"
-end
-
 function extend_env(args :: Array{String}, vals :: Array{Value}, env :: Environment)
     if length(args) != length(vals)
         error("AQSE: Mismatched arity!")
